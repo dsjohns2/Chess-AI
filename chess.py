@@ -22,23 +22,77 @@ class game:
 					  [square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True)], 
 					  [square("w", "R", True), square("w", "N", True), square("w", "B", True), square("w", "Q", True), square("w", "K", True), square("w", "B", True), square("w", "N", True), square("w", "R", True)]] 
 		self.white_turn = True
+		self.turns_since_capture_or_pawn_movement = 0
+		self.pieces = 32
 
-	def make_move(self):
+	def make_move(self, human_flag):
 		if(self.white_turn):
 			legal_moves = self.get_legal_moves(self.board, "w")
 			legal_moves = self.remove_moves_resulting_in_check(legal_moves, "w")
-			self.white_turn = not self.white_turn
 		else:
 			legal_moves = self.get_legal_moves(self.board, "b")
 			legal_moves = self.remove_moves_resulting_in_check(legal_moves, "b")
-			self.white_turn = not self.white_turn
+
+		#End of Game
 		if(len(legal_moves) == 0):
-			print("Game Over")
+			if(self.white_turn):
+				king_color = "w"
+				opposite_color = "b"
+			else:
+				king_color = "b"
+				opposite_color = "b"
+
+			for i in range(0, 8):
+				for j in range(0, 8):
+					if(self.board[i][j].piece == "K" and self.board[i][j].color == king_color):
+						king_i = i
+						king_j = j
+			danger_squares = []
+			for i in range(0, 8):
+				for j in range(0, 8):
+					danger_squares += self.squares_that_piece_at_i_j_can_take(self.board, i, j, opposite_color)
+			checkmate_flag = False
+			for danger_square in danger_squares:
+				if(danger_square[0] == king_i and danger_square[1] == king_j):
+					checkmate_flag = True
+			if(checkmate_flag):
+				if(self.white_turn):
+					print("Black Wins!")
+				else:
+					print("White Wins!")
+			else:
+				print("Stalemate - No possible moves")
+
+			print("Game Over.")
 			sys.exit(0)
+		#Game Continues
 		else:
-			move = self.pick_move(legal_moves)
+			move = self.pick_move(legal_moves, human_flag)
 			self.upgrade_pawns(move)
 			self.board = move
+			self.check_for_stalemate(self.board)
+			self.white_turn = not self.white_turn
+
+	def check_for_stalemate(self, board):
+		#stalemate for 50 move rule
+		stalemate_flag = False
+		pieces = 0
+		for i in range(0, 8):
+			for j in range(0, 8):
+				if(board[i][j].is_occupied):
+					pieces += 1
+
+		if(self.pieces == pieces):
+			self.turns_since_capture_or_pawn_movement += 1
+		else:
+			self.pieces = pieces
+			self.turns_since_capture_or_pawn_movement = 0
+
+		if(self.turns_since_capture_or_pawn_movement >= 50):
+			self.print_board(board)
+			print("Stalemate - No capture in 50 moves")
+			print("Game Over.")
+			sys.exit(0)
 	
 	def upgrade_pawns(self, board):
 		for i in range(0, 8):
@@ -329,13 +383,42 @@ class game:
 						legal_moves.append(new_board)
 		return legal_moves
 
-	def pick_move(self, legal_moves):
-		return legal_moves[random.randrange(0, len(legal_moves))]
+	def pick_move(self, legal_moves, human_flag):
+		if(human_flag):
+			human_move = ""
+			while(not len(human_move) == 3):
+				human_move = raw_input("Type your move: ")
+				piece = human_move[0]
+				column = human_move[1]
+				row = int(human_move[2])
+			if(column == "a"):
+				j = 0
+			elif(column == "b"):
+				j = 1
+			elif(column == "c"):
+				j = 2
+			elif(column == "d"):
+				j = 3
+			elif(column == "e"):
+				j = 4
+			elif(column == "f"):
+				j = 5
+			elif(column == "g"):
+				j = 6
+			else:
+				j = 7
+			i = 8-row
+			for k in range(0, len(legal_moves)):
+				move = legal_moves[k]
+				if(move[i][j].piece == piece):
+					return legal_moves[k]
+		else:
+			return legal_moves[random.randrange(0, len(legal_moves))]
 
 	def print_board(self, board):
 		print(Fore.WHITE + "~~~~~~~~~~~~~~~~~")
-		for i in board:
-			for j in i:
+		for i in range(0, len(board)):
+			for j in board[i]:
 				if(j.color == "b"):
 					print(Fore.WHITE + "|", end='')
 					print(Fore.BLUE + j.piece, end='')
@@ -344,17 +427,32 @@ class game:
 					print(Fore.GREEN + j.piece, end='')
 				else:
 					print(Fore.WHITE + "| ", end='')
-			print(Fore.WHITE + "|")
+			print(Fore.WHITE + "|" + str(8-i))
 			print(Fore.WHITE + "~~~~~~~~~~~~~~~~~")
+		print(Fore.WHITE + " A B C D E F G H ")
 		print("")
 
+	def human_move(self):
+		self.make_move(True)
+
+	def computer_move(self):
+		self.make_move(False)
+
 my_game = game()
+my_game.print_board(my_game.board)
 for i in range(0, 1000):
-	my_game.make_move()
+	#white
+	my_game.computer_move()
+	my_game.print_board(my_game.board)
+	#black
+	my_game.computer_move()
 	my_game.print_board(my_game.board)
 #TODO:
-##Castleing
-##enpasqnt
-##checkmate vs stalemate
-##human move
-##ml
+	##fine tune human moves
+	##not recognizing checkmate?
+	##Castleing
+	##enpasant
+	##ml
+		###how many white pieces cover other white pieces
+		###points
+		###num pieces
