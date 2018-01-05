@@ -575,8 +575,9 @@ class game:
 				add_to_weight = change_constant * (elem[1] - self.lin_fun(elem[0])) * x[j]
 				self.weights[j] += add_to_weight
 
-weights = [.5, .5]
-for i in range(0, 100):
+#TODO:add reading and writing weights to file
+weights = [0, 0]
+for i in range(0, 1000):
 	print(weights)
 	my_game = game(weights)
 	my_game.play_game()
@@ -588,7 +589,7 @@ print(weights)
 white_wins = 0
 black_wins = 0
 draws = 0
-for i in range(0, 100):
+for i in range(0, 1000):
 	my_game = game(weights)
 	result = my_game.play_game()
 	if(result == 0):
