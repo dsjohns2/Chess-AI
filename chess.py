@@ -21,21 +21,11 @@ class game:
 					  [square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False)], 
 					  [square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True)], 
 					  [square("w", "R", True), square("w", "N", True), square("w", "B", True), square("w", "Q", True), square("w", "K", True), square("w", "B", True), square("w", "N", True), square("w", "R", True)]] 
-		"""
-		self.board = [[square("b", "R", True), square("b", "N", True), square("b", "B", True), square("b", "Q", True), square("b", "K", True), square("b", "B", True), square("b", "N", True), square("b", "R", True)], 
-					  [square("b", "P", True), square("b", "P", True), square("b", "P", True), square("b", "P", True), square("b", "P", True), square("b", "P", True), square("b", "P", True), square("b", "P", True)], 
-					  [square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False)], 
-					  [square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False)], 
-					  [square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False)], 
-					  [square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False), square("", "", False)], 
-					  [square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True), square("w", "P", True)], 
-					  [square("w", "R", True), square("w", "N", True), square("w", "B", True), square("w", "Q", True), square("w", "K", True), square("w", "B", True), square("w", "N", True), square("w", "R", True)]] 
-		"""
 		self.white_turn = True
 		self.turns_since_capture_or_pawn_movement = 0
 		self.pieces = 32
 		self.weights = weights
-		self.history = []
+		self.board_history = []
 		self.training_set = []
 
 	def make_move(self, human_flag):
@@ -45,7 +35,7 @@ class game:
 				1 if white wins
 				2 if black wins
 		"""
-		self.history.append(self.board)
+		self.board_history.append(self.board)
 		if(self.white_turn):
 			legal_moves = self.get_legal_moves(self.board, "w")
 		else:
@@ -478,7 +468,7 @@ class game:
 				if(move_values[i]>best_val):
 					best_val = move_values[i]
 					best_idx = i
-			if(len(self.history) > 5 and legal_moves[best_idx] == self.history[-4]):
+			if(len(self.board_history) > 5 and legal_moves[best_idx] == self.board_history[-4]):
 				#exit move loop
 				return legal_moves[random.randrange(0, len(legal_moves))]
 			else:
@@ -545,10 +535,10 @@ class game:
 				#end points
 				#begin legal moves
 				if(board[i][j].color == "w"):
-					legal_moves = self.get_legal_moves(board, "w")
+					legal_moves = []#self.get_legal_moves(board, "w")
 					x[2] += len(legal_moves)
 				elif(board[i][j].color == "b"):
-					legal_moves = self.get_legal_moves(board, "b")
+					legal_moves = []#self.get_legal_moves(board, "b")
 					x[3] += len(legal_moves)
 				#end legal moves
 				#begin center points
@@ -676,14 +666,13 @@ class game:
 		while(game_is_over == -1):
 			game_is_over = self.computer_move()
 			#print(game_is_over)
-			self.print_board(self.board)
-			print(self.get_x(self.board))
+			#self.print_board(self.board)
 		return game_is_over
 
 	def create_training_set(self):
-		for i in range(0, len(self.history)):
+		for i in range(0, len(self.board_history)):
 			if(i % 2 == 0):
-				state = self.history[i]
+				state = self.board_history[i]
 				legal_moves = self.get_legal_moves(state, "w")
 				if(self.game_is_over(state, legal_moves, True) == 1):
 					self.training_set.append([state, 100])
@@ -692,10 +681,10 @@ class game:
 				if(self.game_is_over(state, legal_moves, True) == 0):
 					self.training_set.append([state, 0])
 				if(self.game_is_over(state, legal_moves, True) == -1):
-					if(i+2<len(self.history)):
-						self.training_set.append([state, self.lin_fun(self.history[i+2])])
+					if(i+2<len(self.board_history)):
+						self.training_set.append([state, self.lin_fun(self.board_history[i+2])])
 					else:
-						next_state = self.history[i+1]
+						next_state = self.board_history[i+1]
 						next_state_legal_moves = self.get_legal_moves(state, "b")
 						if(self.game_is_over(next_state, next_state_legal_moves, False) == 2):
 							self.training_set.append([state, -100])
@@ -703,12 +692,9 @@ class game:
 							self.training_set.append([state, 0])
 
 	def shift_weights(self):
-		print("length: ", len(self.training_set))
 		change_constant = 0.00001
 		for elem in self.training_set:
-			print("here")
 			x = self.get_x(elem[0])
-			#print(x)
 			for j in range(0, len(self.weights)):
 				add_to_weight = change_constant * (elem[1] - self.lin_fun(elem[0])) * x[j]
 				self.weights[j] += add_to_weight
@@ -749,7 +735,7 @@ weights = []
 for s in weights_str_arr:
 	weights.append(float(s))
 weights_file.close()
-for i in range(0, 1):
+for i in range(0, 100):
 	print(weights)
 	my_game = game(weights)
 	my_game.play_game()
@@ -765,7 +751,7 @@ print(weights)
 white_wins = 0
 black_wins = 0
 draws = 0
-for i in range(0, 0):
+for i in range(0, 100):
 	my_game = game(weights)
 	result = my_game.play_game()
 	if(result == 0):
