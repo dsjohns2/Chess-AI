@@ -681,9 +681,7 @@ class game:
 		return game_is_over
 
 	def create_training_set(self):
-		print("length: ", len(self.history))
 		for i in range(0, len(self.history)):
-			print(i)
 			if(i % 2 == 0):
 				state = self.history[i]
 				legal_moves = self.get_legal_moves(state, "w")
@@ -705,8 +703,10 @@ class game:
 							self.training_set.append([state, 0])
 
 	def shift_weights(self):
-		change_constant = 0.0001
+		print("length: ", len(self.training_set))
+		change_constant = 0.00001
 		for elem in self.training_set:
+			print("here")
 			x = self.get_x(elem[0])
 			#print(x)
 			for j in range(0, len(self.weights)):
