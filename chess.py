@@ -201,10 +201,10 @@ class game:
 		if(i==6 and not board[i-1][j].is_occupied and not board[i-2][j].is_occupied):
 			squares.append([i-2, j])
 		#take piece left
-		if(i-1 >= 0 and j-1 >= 0 and j+1 <= 7 and board[i-1][j-1].is_occupied and board[i-1][j-1].color == "b"):
+		if(i-1 >= 0 and j-1 >= 0 and board[i-1][j-1].is_occupied and board[i-1][j-1].color == "b"):
 			squares.append([i-1, j-1])
 		#take piece right
-		if(i-1 >= 0 and j-1 >= 0 and j+1 <= 7 and board[i-1][j+1].is_occupied and board[i-1][j+1].color == "b"):
+		if(i-1 >= 0 and j+1 <= 7 and board[i-1][j+1].is_occupied and board[i-1][j+1].color == "b"):
 			squares.append([i-1, j+1])
 		return squares
 	
@@ -222,10 +222,10 @@ class game:
 		if(i==1 and not board[i+1][j].is_occupied and not board[i+2][j].is_occupied):
 			squares.append([i+2, j])
 		#take piece left
-		if(i+1 <= 7 and j-1 >= 0 and j+1 <= 7 and board[i+1][j-1].is_occupied and board[i+1][j-1].color == "w"):
+		if(i+1 <= 7 and j-1 >= 0 and board[i+1][j-1].is_occupied and board[i+1][j-1].color == "w"):
 			squares.append([i+1, j-1])
 		#take piece right
-		if(i+1 <= 7 and j-1 >= 0 and j+1 <= 7 and board[i+1][j+1].is_occupied and board[i+1][j+1].color == "w"):
+		if(i+1 <= 7 and j+1 <= 7 and board[i+1][j+1].is_occupied and board[i+1][j+1].color == "w"):
 			squares.append([i+1, j+1])
 		return squares
 	
@@ -472,13 +472,17 @@ class game:
 				cur_value = self.lin_fun(move)
 				move_values.append(cur_value)
 
-			best_val = move_values[0]
-			best_idx = 0
+			best_idx = random.randrange(0, len(legal_moves))
+			best_val = move_values[best_idx]
 			for i in range(0, len(move_values)):
 				if(move_values[i]>best_val):
 					best_val = move_values[i]
 					best_idx = i
-			return legal_moves[best_idx]
+			if(len(self.history) > 5 and legal_moves[best_idx] == self.history[-4]):
+				#exit move loop
+				return legal_moves[random.randrange(0, len(legal_moves))]
+			else:
+				return legal_moves[best_idx]
 
 	def lin_fun(self, board):
 		x = self.get_x(board)
@@ -490,9 +494,38 @@ class game:
 	def get_x(self, board):
 		#x[0] = num white points on board
 		#x[1] = num black points on board
-		x = [0, 0]
+		#x[2] = white legal moves
+		#x[3] = black legal moves
+		#x[4] = white center pawn points
+		#x[5] = black center pawn points
+		#x[6] = white center knight points
+		#x[7] = black center knight points
+		#x[8] = white center bishop points
+		#x[9] = black center bishop points
+		#x[10] = white center rook points
+		#x[11] = black center rook points
+		#x[12] = white center queen points
+		#x[13] = black center queen points
+		#x[14] = white center king points
+		#x[15] = black center king points
+		#x[16] = white pawn threatened level
+		#x[17] = black pawn threatened level
+		#x[18] = white knight threatened level
+		#x[19] = black knight threatened level
+		#x[20] = white bishop threatened level
+		#x[21] = black bishop threatened level
+		#x[22] = white rook threatened level
+		#x[23] = black rook threatened level
+		#x[24] = white queen threatened level
+		#x[25] = black queen threatened level
+		#x[26] = white king threatened level
+		#x[27] = black king threatened level
+		#x[] = white coverage points
+		#x[] = black coverage points
+		x = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		for i in range(0, 8):
 			for j in range(0, 8):
+				#begin points
 				if(board[i][j].piece == "P"):
 					points = 1
 				elif(board[i][j].piece == "N"):
@@ -505,11 +538,114 @@ class game:
 					points = 9
 				else:
 					points = 0
-
 				if(board[i][j].color == "w"):
 					x[0] += points
 				else:
 					x[1] += points
+				#end points
+				#begin legal moves
+				if(board[i][j].color == "w"):
+					legal_moves = self.get_legal_moves(board, "w")
+					x[2] += len(legal_moves)
+				elif(board[i][j].color == "b"):
+					legal_moves = self.get_legal_moves(board, "b")
+					x[3] += len(legal_moves)
+				#end legal moves
+				#begin center points
+				center_points = 0
+				if(i == 0):
+					center_points += 1
+				elif(i == 1):
+					center_points += 2
+				elif(i == 2):
+					center_points += 3
+				elif(i == 3):
+					center_points += 4
+				elif(i == 4):
+					center_points += 4
+				elif(i == 5):
+					center_points += 3
+				elif(i == 6):
+					center_points += 2
+				else:
+					center_points += 1
+
+				if(j == 0):
+					center_points += 1
+				elif(j == 1):
+					center_points += 2
+				elif(j == 2):
+					center_points += 3
+				elif(j == 3):
+					center_points += 4
+				elif(j == 4):
+					center_points += 4
+				elif(j == 5):
+					center_points += 3
+				elif(j == 6):
+					center_points += 2
+				else:
+					center_points += 1
+
+				if(board[i][j].color == "w"):
+					if(board[i][j].piece == "P"):
+						x[4] += center_points
+					elif(board[i][j].piece == "N"):
+						x[6] += center_points
+					elif(board[i][j].piece == "B"):
+						x[8] += center_points
+					elif(board[i][j].piece == "R"):
+						x[10] += center_points
+					elif(board[i][j].piece == "Q"):
+						x[12] += center_points
+					elif(board[i][j].piece == "K"):
+						x[14] += center_points
+				elif(board[i][j].color == "b"):
+					if(board[i][j].piece == "P"):
+						x[5] += center_points
+					elif(board[i][j].piece == "N"):
+						x[7] += center_points
+					elif(board[i][j].piece == "B"):
+						x[9] += center_points
+					elif(board[i][j].piece == "R"):
+						x[11] += center_points
+					elif(board[i][j].piece == "Q"):
+						x[13] += center_points
+					elif(board[i][j].piece == "K"):
+						x[15] += center_points
+				#end center points
+				#begin threatened level
+				if(board[i][j].color == "w"):
+					squares = self.squares_that_piece_at_i_j_can_take(board, i, j, "w")
+					for square in squares:
+						if(board[square[0]][square[1]].piece == "P"):
+							x[17] += 1
+						if(board[square[0]][square[1]].piece == "N"):
+							x[19] += 1
+						if(board[square[0]][square[1]].piece == "B"):
+							x[21] += 1
+						if(board[square[0]][square[1]].piece == "R"):
+							x[23] += 1
+						if(board[square[0]][square[1]].piece == "Q"):
+							x[25] += 1
+						if(board[square[0]][square[1]].piece == "K"):
+							x[27] += 1
+				elif(board[i][j].color == "b"):
+					squares = self.squares_that_piece_at_i_j_can_take(board, i, j, "b")
+					for square in squares:
+						if(board[square[0]][square[1]].piece == "P"):
+							x[16] += 1
+						if(board[square[0]][square[1]].piece == "N"):
+							x[18] += 1
+						if(board[square[0]][square[1]].piece == "B"):
+							x[20] += 1
+						if(board[square[0]][square[1]].piece == "R"):
+							x[22] += 1
+						if(board[square[0]][square[1]].piece == "Q"):
+							x[24] += 1
+						if(board[square[0]][square[1]].piece == "K"):
+							x[26] += 1
+				#end threatened level
 		return x
 
 	def print_board(self, board):
@@ -538,14 +674,16 @@ class game:
 	def play_game(self):
 		game_is_over = -1
 		while(game_is_over == -1):
-			game_is_over = my_game.computer_move()
-			#time.sleep(.1)
+			game_is_over = self.computer_move()
 			#print(game_is_over)
-			#my_game.print_board(my_game.board)
+			self.print_board(self.board)
+			print(self.get_x(self.board))
 		return game_is_over
 
 	def create_training_set(self):
+		print("length: ", len(self.history))
 		for i in range(0, len(self.history)):
+			print(i)
 			if(i % 2 == 0):
 				state = self.history[i]
 				legal_moves = self.get_legal_moves(state, "w")
@@ -576,20 +714,58 @@ class game:
 				self.weights[j] += add_to_weight
 
 #TODO:add reading and writing weights to file
-weights = [0, 0]
-for i in range(0, 1000):
+#x[0] = num white points on board
+#x[1] = num black points on board
+#x[2] = white legal moves
+#x[3] = black legal moves
+#x[4] = white center pawn points
+#x[5] = black center pawn points
+#x[6] = white center knight points
+#x[7] = black center knight points
+#x[8] = white center bishop points
+#x[9] = black center bishop points
+#x[10] = white center rook points
+#x[11] = black center rook points
+#x[12] = white center queen points
+#x[13] = black center queen points
+#x[14] = white center king points
+#x[15] = black center king points
+#x[16] = white pawn threatened level
+#x[17] = black pawn threatened level
+#x[18] = white knight threatened level
+#x[19] = black knight threatened level
+#x[20] = white bishop threatened level
+#x[21] = black bishop threatened level
+#x[22] = white rook threatened level
+#x[23] = black rook threatened level
+#x[24] = white queen threatened level
+#x[25] = black queen threatened level
+#x[26] = white king threatened level
+#x[27] = black king threatened level
+weights_file = open("weights.txt", "r")
+weights_str = weights_file.readline()
+weights_str_arr = weights_str.split()
+weights = []
+for s in weights_str_arr:
+	weights.append(float(s))
+weights_file.close()
+for i in range(0, 1):
 	print(weights)
 	my_game = game(weights)
 	my_game.play_game()
 	my_game.create_training_set()
 	my_game.shift_weights()
 	weights = my_game.weights
+	weights_file = open("weights.txt", "w")
+	for w in weights:
+		weights_file.write(str(w) + " ")
+	weights_file.close()
 print(weights)
 
 white_wins = 0
 black_wins = 0
 draws = 0
-for i in range(0, 1000):
+for i in range(0, 0):
 	my_game = game(weights)
 	result = my_game.play_game()
 	if(result == 0):
@@ -604,7 +780,6 @@ print("draws: ", draws)
 
 #TODO:
 	##fine tune human moves
-	##not recognizing checkmate?
 	##Castleing
 	##enpasant
 	##ml
