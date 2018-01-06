@@ -426,33 +426,52 @@ class game:
 
 	def pick_move(self, legal_moves, human_flag, random_flag):
 		if(human_flag):
-			human_move = ""
-			while(not len(human_move) == 3):
-				human_move = raw_input("Type your move: ")
-				piece = human_move[0]
-				column = human_move[1]
-				row = int(human_move[2])
-			if(column == "a"):
-				j = 0
-			elif(column == "b"):
-				j = 1
-			elif(column == "c"):
-				j = 2
-			elif(column == "d"):
-				j = 3
-			elif(column == "e"):
-				j = 4
-			elif(column == "f"):
-				j = 5
-			elif(column == "g"):
-				j = 6
-			else:
-				j = 7
-			i = 8-row
-			for k in range(0, len(legal_moves)):
-				move = legal_moves[k]
-				if(move[i][j].piece == piece):
-					return legal_moves[k]
+			while(True):
+				human_move = ""
+				if(self.white_turn):
+					human_color = "w"
+				else:
+					human_color = "b"
+				while(not len(human_move) == 3):
+					human_move = raw_input("Type your move: ")
+					piece = human_move[0]
+					column = human_move[1]
+					row = int(human_move[2])
+				if(column == "a"):
+					j = 0
+				elif(column == "b"):
+					j = 1
+				elif(column == "c"):
+					j = 2
+				elif(column == "d"):
+					j = 3
+				elif(column == "e"):
+					j = 4
+				elif(column == "f"):
+					j = 5
+				elif(column == "g"):
+					j = 6
+				else:
+					j = 7
+				i = 8-row
+
+				candidate_moves = []
+				for k in range(0, len(legal_moves)):
+					move = legal_moves[k]
+					if(move[i][j].piece == piece and move[i][j].color == human_color):
+						candidate_moves.append(legal_moves[k])
+
+				if(len(candidate_moves) == 1):
+					return candidate_moves[0]
+				elif(len(candidate_moves) > 1):
+					print("Enter the number of the move you wanted: ")
+					for idx in range(0, len(candidate_moves)):
+						print(idx)
+						self.print_board(candidate_moves[idx], True)
+					return candidate_moves[int(raw_input("Number: "))]
+				else:
+					print("Invalid move")
+
 		elif(random_flag):
 			return legal_moves[random.randrange(0, len(legal_moves))]
 		else:
@@ -638,22 +657,39 @@ class game:
 				#end threatened level
 		return x
 
-	def print_board(self, board):
+	def print_board(self, board, upside_down_flag):
 		print(Fore.WHITE + "~~~~~~~~~~~~~~~~~")
-		for i in range(0, len(board)):
-			for j in board[i]:
-				if(j.color == "b"):
-					print(Fore.WHITE + "|", end='')
-					print(Fore.BLUE + j.piece, end='')
-				elif(j.color == "w"):
-					print(Fore.WHITE + "|", end='')
-					print(Fore.GREEN + j.piece, end='')
-				else:
-					print(Fore.WHITE + "| ", end='')
-			print(Fore.WHITE + "|" + str(8-i))
-			print(Fore.WHITE + "~~~~~~~~~~~~~~~~~")
-		print(Fore.WHITE + " A B C D E F G H ")
-		print("")
+		if(not upside_down_flag):
+			for i in range(0, len(board)):
+				for j in board[i]:
+					if(j.color == "b"):
+						print(Fore.WHITE + "|", end='')
+						print(Fore.BLUE + j.piece, end='')
+					elif(j.color == "w"):
+						print(Fore.WHITE + "|", end='')
+						print(Fore.GREEN + j.piece, end='')
+					else:
+						print(Fore.WHITE + "| ", end='')
+				print(Fore.WHITE + "|" + str(8-i))
+				print(Fore.WHITE + "~~~~~~~~~~~~~~~~~")
+			print(Fore.WHITE + " a b c d e f g h ")
+			print("")
+		else:
+			for i in [7, 6, 5, 4, 3, 2, 1, 0]:
+				for k in [7, 6, 5, 4, 3, 2, 1, 0]:
+					j = board[i][k]
+					if(j.color == "b"):
+						print(Fore.WHITE + "|", end='')
+						print(Fore.BLUE + j.piece, end='')
+					elif(j.color == "w"):
+						print(Fore.WHITE + "|", end='')
+						print(Fore.GREEN + j.piece, end='')
+					else:
+						print(Fore.WHITE + "| ", end='')
+				print(Fore.WHITE + "|" + str(8-i))
+				print(Fore.WHITE + "~~~~~~~~~~~~~~~~~")
+			print(Fore.WHITE + " h g f e d c b a ")
+			print("")
 
 	def human_move(self):
 		return self.make_move(True)
@@ -666,7 +702,20 @@ class game:
 		while(game_is_over == -1):
 			game_is_over = self.computer_move()
 			#print(game_is_over)
-			#self.print_board(self.board)
+			#self.print_board(self.board, False)
+		return game_is_over
+
+	def play_human_game(self):
+		game_is_over = -1
+		self.print_board(self.board, True)
+		while(game_is_over == -1):
+			time.sleep(1)
+			if(self.white_turn):
+				game_is_over = self.computer_move()
+			else:
+				game_is_over = self.human_move()
+			self.print_board(self.board, True)
+			
 		return game_is_over
 
 	def create_training_set(self):
@@ -728,6 +777,8 @@ class game:
 #x[25] = black queen threatened level
 #x[26] = white king threatened level
 #x[27] = black king threatened level
+
+#get weights
 weights_file = open("weights.txt", "r")
 weights_str = weights_file.readline()
 weights_str_arr = weights_str.split()
@@ -735,7 +786,9 @@ weights = []
 for s in weights_str_arr:
 	weights.append(float(s))
 weights_file.close()
-for i in range(0, 100):
+
+#train
+for i in range(0, 0):
 	print(weights)
 	my_game = game(weights)
 	my_game.play_game()
@@ -748,10 +801,11 @@ for i in range(0, 100):
 	weights_file.close()
 print(weights)
 
+#play random
 white_wins = 0
 black_wins = 0
 draws = 0
-for i in range(0, 100):
+for i in range(0, 0):
 	my_game = game(weights)
 	result = my_game.play_game()
 	if(result == 0):
@@ -763,6 +817,17 @@ for i in range(0, 100):
 print("white wins: ", white_wins)
 print("black wins: ", black_wins)
 print("draws: ", draws)
+
+#play human
+while(True):
+	my_game = game(weights)
+	result = my_game.play_human_game()
+	if(result == 0):
+		print("Draw")
+	elif(result == 1):
+		print("White Wins")
+	elif(result == 2):
+		print("Black Wins")
 
 #TODO:
 	##fine tune human moves
