@@ -4,6 +4,8 @@ import random
 from colorama import Fore
 import time
 import sys
+import multiprocessing
+from joblib import Parallel, delayed
 
 class square:
 	def __init__(self, color, piece, occupied):
@@ -476,10 +478,14 @@ class game:
 			return legal_moves[random.randrange(0, len(legal_moves))]
 		else:
 			#use learned function
+			num_cores = multiprocessing.cpu_count()
+			move_values = Parallel(n_jobs=num_cores)(delayed(self.lin_fun)(move) for move in legal_moves)
+			"""
 			move_values = []
 			for move in legal_moves:
 				cur_value = self.lin_fun(move)
 				move_values.append(cur_value)
+			"""
 
 			best_idx = random.randrange(0, len(legal_moves))
 			best_val = move_values[best_idx]
@@ -534,6 +540,7 @@ class game:
 		x = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		for i in range(0, 8):
 			for j in range(0, 8):
+				xtemp = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 				#begin points
 				if(board[i][j].piece == "P"):
 					points = 1
@@ -548,17 +555,17 @@ class game:
 				else:
 					points = 0
 				if(board[i][j].color == "w"):
-					x[0] += points
+					xtemp[0] += points
 				else:
-					x[1] += points
+					xtemp[1] += points
 				#end points
 				#begin legal moves
 				if(board[i][j].color == "w"):
-					legal_moves = []#self.get_legal_moves(board, "w")
-					x[2] += len(legal_moves)
+					legal_moves = self.get_legal_moves(board, "w")
+					xtemp[2] += len(legal_moves)
 				elif(board[i][j].color == "b"):
-					legal_moves = []#self.get_legal_moves(board, "b")
-					x[3] += len(legal_moves)
+					legal_moves = self.get_legal_moves(board, "b")
+					xtemp[3] += len(legal_moves)
 				#end legal moves
 				#begin center points
 				center_points = 0
@@ -598,63 +605,67 @@ class game:
 
 				if(board[i][j].color == "w"):
 					if(board[i][j].piece == "P"):
-						x[4] += center_points
+						xtemp[4] += center_points
 					elif(board[i][j].piece == "N"):
-						x[6] += center_points
+						xtemp[6] += center_points
 					elif(board[i][j].piece == "B"):
-						x[8] += center_points
+						xtemp[8] += center_points
 					elif(board[i][j].piece == "R"):
-						x[10] += center_points
+						xtemp[10] += center_points
 					elif(board[i][j].piece == "Q"):
-						x[12] += center_points
+						xtemp[12] += center_points
 					elif(board[i][j].piece == "K"):
-						x[14] += center_points
+						xtemp[14] += center_points
 				elif(board[i][j].color == "b"):
 					if(board[i][j].piece == "P"):
-						x[5] += center_points
+						xtemp[5] += center_points
 					elif(board[i][j].piece == "N"):
-						x[7] += center_points
+						xtemp[7] += center_points
 					elif(board[i][j].piece == "B"):
-						x[9] += center_points
+						xtemp[9] += center_points
 					elif(board[i][j].piece == "R"):
-						x[11] += center_points
+						xtemp[11] += center_points
 					elif(board[i][j].piece == "Q"):
-						x[13] += center_points
+						xtemp[13] += center_points
 					elif(board[i][j].piece == "K"):
-						x[15] += center_points
+						xtemp[15] += center_points
 				#end center points
 				#begin threatened level
 				if(board[i][j].color == "w"):
 					squares = self.squares_that_piece_at_i_j_can_take(board, i, j, "w")
 					for square in squares:
 						if(board[square[0]][square[1]].piece == "P"):
-							x[17] += 1
+							xtemp[17] += 1
 						if(board[square[0]][square[1]].piece == "N"):
-							x[19] += 1
+							xtemp[19] += 1
 						if(board[square[0]][square[1]].piece == "B"):
-							x[21] += 1
+							xtemp[21] += 1
 						if(board[square[0]][square[1]].piece == "R"):
-							x[23] += 1
+							xtemp[23] += 1
 						if(board[square[0]][square[1]].piece == "Q"):
-							x[25] += 1
+							xtemp[25] += 1
 						if(board[square[0]][square[1]].piece == "K"):
-							x[27] += 1
+							xtemp[27] += 1
 				elif(board[i][j].color == "b"):
 					squares = self.squares_that_piece_at_i_j_can_take(board, i, j, "b")
 					for square in squares:
 						if(board[square[0]][square[1]].piece == "P"):
-							x[16] += 1
+							xtemp[16] += 1
 						if(board[square[0]][square[1]].piece == "N"):
-							x[18] += 1
+							xtemp[18] += 1
 						if(board[square[0]][square[1]].piece == "B"):
-							x[20] += 1
+							xtemp[20] += 1
 						if(board[square[0]][square[1]].piece == "R"):
-							x[22] += 1
+							xtemp[22] += 1
 						if(board[square[0]][square[1]].piece == "Q"):
-							x[24] += 1
+							xtemp[24] += 1
 						if(board[square[0]][square[1]].piece == "K"):
-							x[26] += 1
+							xtemp[26] += 1
 				#end threatened level
+				#begin add xtemp to x
+				for k in range(0, len(x)):
+					x[k] += xtemp[k]
+				#end add xtemp to x
 		return x
 
 	def print_board(self, board, upside_down_flag):
@@ -702,7 +713,7 @@ class game:
 		while(game_is_over == -1):
 			game_is_over = self.computer_move()
 			#print(game_is_over)
-			#self.print_board(self.board, False)
+			self.print_board(self.board, False)
 		return game_is_over
 
 	def play_human_game(self):
@@ -748,7 +759,6 @@ class game:
 				add_to_weight = change_constant * (elem[1] - self.lin_fun(elem[0])) * x[j]
 				self.weights[j] += add_to_weight
 
-#TODO:add reading and writing weights to file
 #x[0] = num white points on board
 #x[1] = num black points on board
 #x[2] = white legal moves
@@ -789,7 +799,6 @@ weights_file.close()
 
 #train
 for i in range(0, 0):
-	print(weights)
 	my_game = game(weights)
 	my_game.play_game()
 	my_game.create_training_set()
@@ -799,13 +808,12 @@ for i in range(0, 0):
 	for w in weights:
 		weights_file.write(str(w) + " ")
 	weights_file.close()
-print(weights)
 
 #play random
 white_wins = 0
 black_wins = 0
 draws = 0
-for i in range(0, 0):
+for i in range(0, 100):
 	my_game = game(weights)
 	result = my_game.play_game()
 	if(result == 0):
@@ -819,7 +827,7 @@ print("black wins: ", black_wins)
 print("draws: ", draws)
 
 #play human
-while(True):
+for i in range(0, 0):
 	my_game = game(weights)
 	result = my_game.play_human_game()
 	if(result == 0):
